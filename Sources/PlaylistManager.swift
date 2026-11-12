@@ -37,6 +37,8 @@ class PlaylistManager: ObservableObject {
 
     private var playRequestGeneration = 0
     private var isRestoringState = false
+    /// Work that has to wait until the launch-time playlist restore has finished.
+    private var afterRestoreActions: [@MainActor () -> Void] = []
 
     // Shuffle management
     private var shuffledIndices: [Int] = []
@@ -534,7 +536,10 @@ class PlaylistManager: ObservableObject {
 
             await MainActor.run { [weak self] in
                 guard let self else { return }
-                defer { self.isRestoringState = false }
+                defer {
+                    self.isRestoringState = false
+                    self.runAfterRestoreActions()
+                }
 
                 if restoredTracks.isEmpty {
                     // Do not persist an empty playlist — a transient permission failure would
@@ -649,6 +654,90 @@ class PlaylistManager: ObservableObject {
             await MainActor.run {
                 self?.addTrack(track)
             }
+        }
+    }
+
+    // MARK: - Files from Finder
+
+    /// Files handed over by Finder: "Open With", a drop on the Dock icon, or a double-click.
+    /// Queues them at the end of the playlist, like a drop on the playlist. `shouldStartPlayback`
+    /// then decides whether the first new track starts playing; it is told whether the playlist
+    /// was empty before the files were added.
+    func enqueueOpenedURLs(
+        _ urls: [URL],
+        shouldStartPlayback: @escaping @MainActor @Sendable (_ playlistWasEmpty: Bool) -> Bool
+    ) {
+        self.performAfterRestore { [weak self] in
+            self?.importOpenedURLs(urls, shouldStartPlayback: shouldStartPlayback)
+        }
+    }
+
+    private func importOpenedURLs(
+        _ urls: [URL],
+        shouldStartPlayback: @escaping @MainActor @Sendable (_ playlistWasEmpty: Bool) -> Bool
+    ) {
+        let supported = urls.filter { url in
+            let ext = url.pathExtension
+            return M3UParser.isM3UExtension(ext) || M3UParser.isSupportedAudioExtension(ext)
+        }
+        guard !supported.isEmpty else { return }
+
+        for url in supported {
+            if M3UParser.isM3UExtension(url.pathExtension) {
+                self.fileService.bookmarkM3UResources(for: url)
+            } else {
+                self.bookmarkStore.saveBookmark(for: url)
+            }
+        }
+
+        let fileService = self.fileService
+        Task.detached(priority: .userInitiated) { [weak self] in
+            var newTracks: [Track] = []
+            for url in supported {
+                if M3UParser.isM3UExtension(url.pathExtension) {
+                    if let m3uTracks = await fileService.loadM3UPlaylist(from: url) {
+                        newTracks.append(contentsOf: m3uTracks)
+                    }
+                } else {
+                    await newTracks.append(Track.load(from: url))
+                }
+            }
+            let loadedTracks = newTracks
+            await MainActor.run {
+                self?.appendOpenedTracks(loadedTracks, shouldStartPlayback: shouldStartPlayback)
+            }
+        }
+    }
+
+    private func appendOpenedTracks(
+        _ newTracks: [Track],
+        shouldStartPlayback: @MainActor @Sendable (_ playlistWasEmpty: Bool) -> Bool
+    ) {
+        guard !newTracks.isEmpty else { return }
+        let playlistWasEmpty = self.tracks.isEmpty
+        let firstNewIndex = self.tracks.count
+        self.addTracks(newTracks)
+        if shouldStartPlayback(playlistWasEmpty) {
+            self.playTrack(at: firstNewIndex)
+        }
+    }
+
+    /// Runs `action` now, or once the launch-time playlist restore has finished. The restore
+    /// replaces `tracks` wholesale, so anything appended before it completes would be lost, and
+    /// `tracks` cannot be trusted to be the launch playlist until it is done.
+    func performAfterRestore(_ action: @escaping @MainActor () -> Void) {
+        if self.isRestoringState {
+            self.afterRestoreActions.append(action)
+        } else {
+            action()
+        }
+    }
+
+    private func runAfterRestoreActions() {
+        let actions = self.afterRestoreActions
+        self.afterRestoreActions.removeAll()
+        for action in actions {
+            action()
         }
     }
 

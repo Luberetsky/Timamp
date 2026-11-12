@@ -17,6 +17,8 @@ final class AmpXAppDelegate: NSObject, NSApplicationDelegate {
 
     private var applicationController: AmpXApplicationController?
     private var keyboardEventMonitor: Any?
+    /// Files Finder handed over before launch finished ("Open With" on a closed AmpX).
+    private var pendingOpenURLs: [URL] = []
 
     func applicationDidFinishLaunching(_: Notification) {
         guard !Self.isRunningUnderTest else { return }
@@ -44,7 +46,21 @@ final class AmpXAppDelegate: NSObject, NSApplicationDelegate {
 
         NSApp.mainMenu = AmpXMenuBuilder.makeMainMenu(application: application)
         self.installKeyboardShortcuts()
-        application.start()
+
+        let launchURLs = self.pendingOpenURLs
+        self.pendingOpenURLs.removeAll()
+        application.start(opening: launchURLs)
+    }
+
+    /// "Open With", a drop on the Dock icon, or a double-click in Finder.
+    func application(_: NSApplication, open urls: [URL]) {
+        guard let application = self.applicationController else {
+            // AmpX is being launched to open these files: AppKit delivers them before
+            // `applicationDidFinishLaunching`, so keep them until the app is set up.
+            self.pendingOpenURLs.append(contentsOf: urls)
+            return
+        }
+        application.openFiles(urls)
     }
 
     func applicationShouldHandleReopen(_: NSApplication, hasVisibleWindows: Bool) -> Bool {

@@ -8,6 +8,8 @@ final class AmpXApplicationController: NSObject, NSMenuItemValidation {
     let hosts: AmpXHostCoordinator
 
     private let playsStartupSound: Bool
+    /// Set once Finder hands over a file, so the startup chime never plays over or instead of it.
+    private var startupSoundCancelled = false
     private var playbackCoordinationBound = false
 
     init(
@@ -23,11 +25,17 @@ final class AmpXApplicationController: NSObject, NSMenuItemValidation {
         super.init()
     }
 
-    func start() {
+    /// `launchURLs` are files Finder handed over while AmpX was launching ("Open With" on a closed app).
+    func start(opening launchURLs: [URL] = []) {
         self.bindPlaybackCoordinationIfNeeded()
-        self.loadStartupSoundIfNeeded()
+        if launchURLs.isEmpty {
+            self.loadStartupSoundIfNeeded()
+        }
         self.wirePlayerMenuButton()
         self.hosts.showAll()
+        if !launchURLs.isEmpty {
+            self.openFiles(launchURLs, launchedToOpen: true)
+        }
     }
 
     func terminate() {
@@ -77,6 +85,18 @@ final class AmpXApplicationController: NSObject, NSMenuItemValidation {
 
     @objc func savePlaylist(_: Any?) {
         self.playlistManager.saveM3UPlaylist()
+    }
+
+    // MARK: - Files from Finder
+
+    /// "Open With", a drop on the Dock icon, or a double-click in Finder. The files are queued at
+    /// the end of the playlist. The first of them starts playing when AmpX was launched to open it
+    /// or the playlist was empty; otherwise playback and the playlist position are left alone.
+    func openFiles(_ urls: [URL], launchedToOpen: Bool = false) {
+        self.startupSoundCancelled = true
+        self.playlistManager.enqueueOpenedURLs(urls) { playlistWasEmpty in
+            launchedToOpen || playlistWasEmpty
+        }
     }
 
     // MARK: - Playback
@@ -166,20 +186,31 @@ final class AmpXApplicationController: NSObject, NSMenuItemValidation {
 
     private func loadStartupSoundIfNeeded() {
         guard self.playsStartupSound else { return }
-        guard self.playlistManager.shouldPlayStartupSoundOnLaunch else { return }
         guard let startupURL = Bundle.main.url(forResource: "startup", withExtension: "mp3") else {
             return
         }
 
-        Task { @MainActor in
-            let startupTrack = await Track.load(from: startupURL)
-            try? await Task.sleep(nanoseconds: 200_000_000)
-            self.audioPlayer.loadTrack(startupTrack) { success in
-                if success {
-                    self.audioPlayer.play()
+        // The chime is for an empty playlist only. The saved playlist comes back asynchronously,
+        // so the decision waits for the restore instead of being taken at launch.
+        self.playlistManager.performAfterRestore { [weak self] in
+            guard let self, self.shouldPlayStartupSound else { return }
+            Task { @MainActor in
+                let startupTrack = await Track.load(from: startupURL)
+                try? await Task.sleep(nanoseconds: 200_000_000)
+                guard self.shouldPlayStartupSound else { return }
+                self.audioPlayer.loadTrack(startupTrack) { success in
+                    if success, self.shouldPlayStartupSound {
+                        self.audioPlayer.play()
+                    }
                 }
             }
         }
+    }
+
+    /// True while nothing else has a claim on the player: the playlist is empty and Finder has
+    /// not handed over a file.
+    private var shouldPlayStartupSound: Bool {
+        !self.startupSoundCancelled && self.playlistManager.shouldPlayStartupSoundOnLaunch
     }
 
     private func wirePlayerMenuButton() {
