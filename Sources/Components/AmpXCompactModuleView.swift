@@ -108,9 +108,12 @@ class AmpXCompactModuleView: AmpXModuleContent {
         self.skin.panelFrame(self.bounds, contentFrame: self.bounds.insetBy(dx: 2.5, dy: 2.5), in: context, backingScale: scale)
         self.drawBrand(in: context)
         let brand = self.chromeLayout.brand
-        let label = AmpXLabel(text: "AmpX", color: self.skin.text, fontSize: 14.5, weight: .semibold, tracking: 0.1)
+        // "TIMAMP" is two letters wider than the reference wordmark the brand rect was measured for.
+        // It is set at 12 pt instead of 14.5 and starts 3.8 pt left of that rect, which leaves equal
+        // room, about 7 pt, to the bolt on the left and to the first separator on the right.
+        let label = AmpXLabel(text: AmpXBrand.wordmark, color: self.skin.text, fontSize: 12, weight: .semibold, tracking: 0.1)
         context.saveGState()
-        context.translateBy(x: brand.minX, y: brand.maxY - 2.6)
+        context.translateBy(x: brand.minX - 3.8, y: brand.maxY - 2.6)
         context.concatenate(CGAffineTransform(a: 1, b: 0, c: -0.18, d: 1, tx: 0, ty: 0))
         label.draw(x: 0, baseline: 0, context: context, skin: self.skin)
         context.restoreGState()

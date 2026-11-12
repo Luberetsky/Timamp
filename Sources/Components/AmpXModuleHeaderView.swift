@@ -96,7 +96,7 @@ final class AmpXModuleHeaderView: AmpXDrawingView {
     private var brandLabel: AmpXLabel {
         let isPlayer = self.moduleID == .player
         return AmpXLabel(
-            text: "AmpX",
+            text: AmpXBrand.wordmark,
             color: skin.text,
             fontSize: (isPlayer ? 20 : 18) * self.scale,
             weight: .semibold,
@@ -115,11 +115,14 @@ final class AmpXModuleHeaderView: AmpXDrawingView {
     }
 
     /// Equalizer measured (eq-measurements-v2); Playlist estimated from the full reference until Task 4.
+    /// Both are moved apart from those positions for the six-letter wordmark: the brand ink starts
+    /// 11 pt further left and the title ink 11 pt further right. That keeps the centre of the group
+    /// where the reference has it and the gap between brand and title within 0.4 pt of it.
     private var titlePlacement: TitlePlacement? {
         switch self.moduleID {
         case .player: nil
-        case .equalizer: TitlePlacement(brandInkX: 175.5, titleInkX: 243.5, baseline: 21, ruleGapBefore: 19.5, ruleGapAfter: 18)
-        case .playlist: TitlePlacement(brandInkX: 185, titleInkX: 244.5, baseline: 21, ruleGapBefore: 18.5, ruleGapAfter: 16)
+        case .equalizer: TitlePlacement(brandInkX: 164.5, titleInkX: 254.5, baseline: 21, ruleGapBefore: 19.5, ruleGapAfter: 18)
+        case .playlist: TitlePlacement(brandInkX: 174, titleInkX: 255.5, baseline: 21, ruleGapBefore: 18.5, ruleGapAfter: 16)
         case .enthea: TitlePlacement(brandInkX: nil, titleInkX: 243.5, baseline: 21, ruleGapBefore: 19.5, ruleGapAfter: 16.5)
         }
     }
@@ -272,7 +275,7 @@ final class AmpXModuleHeaderView: AmpXDrawingView {
     private func accessibilityTitle(for moduleID: AmpXModuleID) -> String {
         switch moduleID {
         case .player:
-            "AmpX"
+            AmpXBrand.name
         case .equalizer:
             "Equalizer"
         case .playlist:

@@ -828,7 +828,7 @@ class AudioPlayer: NSObject, ObservableObject {
         panel.canChooseFiles = true
         panel.allowedContentTypes = ["eqf", "q1"].compactMap { UTType(filenameExtension: $0) }
         panel.allowsOtherFileTypes = true
-        panel.message = "Choose an AmpX equalizer preset file (.eqf or .q1)"
+        panel.message = "Choose a \(AmpXBrand.name) equalizer preset file (.eqf or .q1)"
 
         panel.begin { [weak self] response in
             guard let self, response == .OK, let url = panel.url else { return }

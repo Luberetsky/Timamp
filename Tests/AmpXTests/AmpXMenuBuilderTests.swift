@@ -30,7 +30,7 @@ final class AmpXMenuBuilderTests: XCTestCase {
     func testMainMenuHasSingleFileMenuWithCatalogItems() throws {
         let application = self.makeApplication()
         let menu = AmpXMenuBuilder.makeMainMenu(application: application)
-        XCTAssertEqual(menu.items.first?.title, ProcessInfo.processInfo.processName)
+        XCTAssertEqual(menu.items.first?.title, "Timamp")
         XCTAssertEqual(menu.items.filter { $0.title == "File" }.count, 1)
 
         let file = try XCTUnwrap(menu.item(withTitle: "File")?.submenu)
@@ -108,7 +108,7 @@ final class AmpXMenuBuilderTests: XCTestCase {
         let menu = AmpXMenuBuilder.makeMainMenu(application: application)
         let window = try XCTUnwrap(menu.item(withTitle: "Window")?.submenu)
         let titles = window.items.filter { !$0.isSeparatorItem }.map(\.title)
-        XCTAssertTrue(titles.contains("AmpX"))
+        XCTAssertTrue(titles.contains("Timamp"))
         XCTAssertFalse(titles.contains("Move Module Up"))
         XCTAssertFalse(titles.contains("Move Module Down"))
         XCTAssertFalse(titles.contains("Detach/Re-dock Module"))
@@ -129,5 +129,23 @@ final class AmpXMenuBuilderTests: XCTestCase {
         let repeatItem = try XCTUnwrap(playback.item(withTitle: AmpXMenuCatalog.PlaybackItem.repeat.rawValue))
         XCTAssertEqual(shuffle.state, .on)
         XCTAssertEqual(repeatItem.state, .on)
+    }
+
+    func testProgramNameInMenusAndBundle() throws {
+        XCTAssertEqual(AmpXBrand.name, "Timamp")
+        XCTAssertEqual(AmpXBrand.wordmark, "TIMAMP")
+
+        let application = self.makeApplication()
+        let menu = AmpXMenuBuilder.makeMainMenu(application: application)
+        let appMenu = try XCTUnwrap(menu.items.first?.submenu)
+        let appTitles = appMenu.items.map(\.title)
+        for title in ["About Timamp", "Hide Timamp", "Quit Timamp"] {
+            XCTAssertTrue(appTitles.contains(title), "\(title) is missing from the application menu")
+        }
+
+        // The menu bar and the About panel take the name from the bundle's Info.plist, not from the menu.
+        let info = try XCTUnwrap(Bundle.main.infoDictionary)
+        XCTAssertEqual(info["CFBundleName"] as? String, "Timamp")
+        XCTAssertEqual(info["CFBundleDisplayName"] as? String, "Timamp")
     }
 }

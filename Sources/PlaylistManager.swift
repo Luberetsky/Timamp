@@ -146,7 +146,7 @@ class PlaylistManager: ObservableObject {
         guard self.bookmarkStore.ensureAccess(for: url) else {
             self.showFileActionError(
                 title: "Cannot Remove File",
-                message: "AmpX does not have permission to modify this file. Re-add it from its folder to grant access."
+                message: "\(AmpXBrand.name) does not have permission to modify this file. Re-add it from its folder to grant access."
             )
             return false
         }

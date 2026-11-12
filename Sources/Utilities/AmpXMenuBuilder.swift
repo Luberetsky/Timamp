@@ -21,7 +21,7 @@ enum AmpXMenuBuilder {
         self.appendPlaybackItems(to: menu, application: application, includeToggles: false)
         menu.addItem(.separator())
         menu.addItem(
-            titled: "Quit AmpX",
+            titled: "Quit \(AmpXBrand.name)",
             action: #selector(NSApplication.terminate(_:)),
             target: NSApp,
             keyEquivalent: "q",
@@ -34,13 +34,13 @@ enum AmpXMenuBuilder {
     private static func makeAppMenu(application _: AmpXApplicationController) -> NSMenuItem {
         let appMenu = NSMenu()
         appMenu.addItem(
-            titled: "About AmpX",
+            titled: "About \(AmpXBrand.name)",
             action: #selector(NSApplication.orderFrontStandardAboutPanel(_:)),
             target: NSApp
         )
         appMenu.addItem(.separator())
         appMenu.addItem(
-            titled: "Hide AmpX",
+            titled: "Hide \(AmpXBrand.name)",
             action: #selector(NSApplication.hide(_:)),
             target: NSApp,
             keyEquivalent: "h",
@@ -60,14 +60,15 @@ enum AmpXMenuBuilder {
         )
         appMenu.addItem(.separator())
         appMenu.addItem(
-            titled: "Quit AmpX",
+            titled: "Quit \(AmpXBrand.name)",
             action: #selector(NSApplication.terminate(_:)),
             target: NSApp,
             keyEquivalent: "q",
             modifiers: .command
         )
 
-        let item = NSMenuItem(title: ProcessInfo.processInfo.processName, action: nil, keyEquivalent: "")
+        // macOS titles the application menu with the bundle name whatever is set here; keep the two equal.
+        let item = NSMenuItem(title: AmpXBrand.name, action: nil, keyEquivalent: "")
         item.submenu = appMenu
         return item
     }
@@ -208,7 +209,7 @@ enum AmpXMenuBuilder {
     private static func makeWindowMenu(application: AmpXApplicationController) -> NSMenuItem {
         let menu = NSMenu(title: "Window")
         menu.addItem(
-            titled: "AmpX",
+            titled: AmpXBrand.name,
             action: #selector(AmpXApplicationController.showAmpX(_:)),
             target: application
         )
