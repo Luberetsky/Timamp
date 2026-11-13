@@ -1,12 +1,13 @@
 # Изменения в форке
 
-Форк [ratovarius/ampx](https://github.com/ratovarius/ampx). Правки сделаны поверх релиза 1.1.3 (коммит `d6d2a5c`). Ветка `main` — копия оригинала без изменений.
+Форк [ratovarius/ampx](https://github.com/ratovarius/ampx). Правки сделаны поверх релиза 1.1.3 (коммит `d6d2a5c`). Ветка `main` — оригинал с одной правкой: заголовок README.
 
 | Ветка | Что в ней |
 |---|---|
 | `feature/open-with-finder` | Открытие файлов из Finder (раздел 1) |
 | `feature/timamp-name` | То же и имя программы Timamp (раздел 2) |
 | `feature/more-audio-formats` | То же и форматы MPEG-4 Audio, AAC и AIFF (раздел 3) |
+| `timamp` | Текущая сборка: все правки и README, описывающий её |
 
 ## 1. Открытие файлов из Finder
 
@@ -118,7 +119,7 @@ xcodebuild test -project AmpX.xcodeproj -scheme AmpX \
 - **Имя файла программы.** Сборка по-прежнему даёт `AmpX.app`; в Dock, Finder и «Открыть в программе» имя Timamp появляется при установке под этим именем (см. «Сборка»).
 - **Имя процесса** осталось AmpX.
 - **Раздел 1** называет программу AmpX, как в ветке `feature/open-with-finder`. В сборке из `feature/timamp-name` на её месте везде Timamp.
-- **Документация оригинала** (README, USAGE, BUILDING) не менялась и описывает AmpX.
+- **Документация оригинала.** README и USAGE переписаны под текущую сборку в ветке `timamp`: USAGE сверен с кодом этой ветки. BUILDING и RELEASE описывают оригинал.
 
 ## 3. Форматы: MPEG-4 Audio, AAC и AIFF
 
