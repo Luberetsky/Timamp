@@ -8,6 +8,10 @@ final class M3UParserTests: XCTestCase {
         XCTAssertTrue(M3UParser.isSupportedAudioExtension("mp3"))
         XCTAssertTrue(M3UParser.isSupportedAudioExtension("FLAC"))
         XCTAssertFalse(M3UParser.isSupportedAudioExtension("ogg"))
+        for ext in ["m4a", "M4A", "m4b", "aac", "aiff", "aif"] {
+            XCTAssertTrue(M3UParser.isSupportedAudioExtension(ext), ext)
+        }
+        XCTAssertFalse(M3UParser.isSupportedAudioExtension("m4p"), "protected files cannot be decoded")
     }
 
     func testParseRelativeAndAbsolutePaths() {

@@ -2,6 +2,7 @@ import AppKit
 import Combine
 import Foundation
 import os
+import UniformTypeIdentifiers
 
 private let playlistLogger = Logger(subsystem: "com.ampx.macos", category: "Playlist")
 
@@ -741,12 +742,22 @@ class PlaylistManager: ObservableObject {
         }
     }
 
+    /// What the Add Files panel offers: every supported audio format and M3U playlists.
+    static var filePickerContentTypes: [UTType] {
+        var types: [UTType] = []
+        for ext in M3UParser.supportedExtensions.sorted() + ["m3u"] {
+            guard let type = UTType(filenameExtension: ext), !types.contains(type) else { continue }
+            types.append(type)
+        }
+        return types
+    }
+
     func showFilePicker() {
         let panel = NSOpenPanel()
         panel.allowsMultipleSelection = true
         panel.canChooseDirectories = false
         panel.canChooseFiles = true
-        panel.allowedContentTypes = [.mp3, .wav, .init(filenameExtension: "flac"), .init(filenameExtension: "m3u")].compactMap { $0 }
+        panel.allowedContentTypes = Self.filePickerContentTypes
 
         panel.begin { [weak self] response in
             guard let self, response == .OK else { return }

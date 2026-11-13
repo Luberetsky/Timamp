@@ -1,7 +1,9 @@
 import Foundation
 
 enum M3UParser {
-    static let supportedExtensions: Set<String> = ["mp3", "flac", "wav"]
+    /// Formats macOS decodes itself: MP3, FLAC, WAV, MPEG-4 audio (AAC or Apple Lossless in .m4a and .m4b),
+    /// raw AAC and AIFF. Each extension must also be declared as a document type in `Resources/Info.plist`.
+    static let supportedExtensions: Set<String> = ["mp3", "flac", "wav", "m4a", "m4b", "aac", "aiff", "aif"]
 
     static func isSupportedAudioExtension(_ ext: String) -> Bool {
         self.supportedExtensions.contains(ext.lowercased())
