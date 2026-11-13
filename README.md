@@ -1,4 +1,4 @@
-# Timamp — AmpX with custom behaviour
+# AmpX
 
 *Modern audio player. Classic spirit.*
 
